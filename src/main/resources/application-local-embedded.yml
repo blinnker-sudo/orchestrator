@@ -1,0 +1,25 @@
+server:
+  port: 8088
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: ib-orchestrator
+
+  # Static resources: serves /workflow/** from classpath:/static/workflow/
+  # Replaces Apache httpd container
+  web:
+    resources:
+      static-locations: classpath:/static/
+
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 6.0.9

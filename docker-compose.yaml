@@ -1,0 +1,93 @@
+version: "3"
+services:
+  zookeeper:
+    container_name: zookeeper
+    image: 'af.cds.bns:5003/confluentinc/cp-zookeeper'
+    ports:
+      - '2181:2181'
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: 'af.cds.bns:5003/confluentinc/cp-kafka:7.2.1'
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  init-kafka:
+    container_name: init-kafka
+    image: 'af.cds.bns:5003/confluentinc/cp-kafka'
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "# blocks until kafka is reachable
+      kafka-topics --bootstrap-server kafka:9092 --list
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-start-orchestrator-request-country --replication-factor 1 --partitions 4
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-resume-orchestrator-request-country --replication-factor 1 --partitions 4
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-delivery-orchestrator-request-country --replication-factor 1 --partitions 4
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-init-orchestrator-request-country --replication-factor 1 --partitions 4
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-start-orchestrator-response-country --replication-factor 1 --partitions 2
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-resume-orchestrator-response-country --replication-factor 1 --partitions 2
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-delivery-orchestrator-response-country --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-init-orchestrator-response-country --replication-factor 1 --partitions 3
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dev-ib-platform-event-tracing-country --replication-factor 1 --partitions 5
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server kafka:9092 --list"
+    depends_on:
+      - kafka
+
+  schema-registry:
+    image: 'af.cds.bns:5003/confluentinc/cp-schema-registry'
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - kafka
+      - init-kafka
+    ports:
+      - "8084:8084"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8084
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+
+  apache:
+    image: 'af.cds.bns:5003/httpd'
+    hostname: ib-apache
+    container_name: ib-apache
+    ports:
+      - '8085:80'
+    volumes:
+      - ./src/main/resources/workflow/:/usr/local/apache2/htdocs/workflow
+
+  mongodb:
+    container_name: mongodb
+    image: 'af.cds.bns:5003/mongo'
+    ports:
+      - '27017:27017'
+    volumes:
+      - .:/mongodb
+
+  ib-orchestrator:
+    image: 'af.cds.bns:5003/eclipse-temurin'
+    container_name: ib-orchestrator
+    volumes:
+      - "./build/libs/ib-orchestrator-1.0.jar:/app.jar"
+      - "./src/main/resources/workflow/:/workflow/"
+    environment:
+      - "IB_PLATFORM_ORCHESTRATOR_BOOTSTRAP_PROFILE=local-statemachine"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+      - init-kafka
+    command: ["java", "-jar", "app.jar"]

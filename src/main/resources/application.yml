@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: ib-orchestrator
+  profiles:
+    active: ${IB_PLATFORM_ORCHESTRATOR_BOOTSTRAP_PROFILE:local-embedded}
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.ib.platform.orchestrator: DEBUG
+    org.springframework.statemachine: INFO
+    org.springframework.kafka: INFO
