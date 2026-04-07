@@ -1,7 +1,16 @@
-force 'org.apache.kafka:kafka-clients:3.9.2'
-force 'org.apache.kafka:kafka-server-common:3.9.2'
-force 'org.apache.kafka:kafka-storage:3.9.2'
-force 'org.apache.kafka:kafka-storage-api:3.9.2'
-force 'org.apache.kafka:kafka-raft:3.9.2'
-force 'org.apache.kafka:kafka-metadata:3.9.2'
-force 'org.apache.kafka:kafka_2.13:3.9.2'
+configurations.all {
+    resolutionStrategy {
+        force 'org.apache.kafka:kafka-clients:3.7.0'
+        force 'org.apache.kafka:kafka_2.13:3.7.0'
+        force 'org.apache.kafka:kafka-server-common:3.7.0'
+        force 'org.apache.kafka:kafka-storage:3.7.0'
+        force 'org.apache.kafka:kafka-storage-api:3.7.0'
+        force 'org.apache.kafka:kafka-raft:3.7.0'
+        force 'org.apache.kafka:kafka-metadata:3.7.0'
+        force 'org.apache.kafka:kafka-group-coordinator:3.7.0'
+        force 'org.apache.kafka:kafka-tools-api:3.7.0'
+    }
+    resolutionStrategy.dependencySubstitution {
+        substitute module('at.yawk.lz4:lz4-java') using module('org.lz4:lz4-java:1.8.1')
+    }
+}
