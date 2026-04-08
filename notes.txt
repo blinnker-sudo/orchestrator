@@ -1,31 +1,3 @@
-cd C:\kafka
 .\bin\windows\kafka-consumer-groups.bat --bootstrap-server localhost:9092 ^
-  --group ib-platform-ib-orchestrator-consumer ^
-  --topic dev-ib-platform-start-orchestrator-request-country ^
-  --reset-offsets --to-latest --execute
-
-
-.\bin\windows\kafka-consumer-groups.bat --bootstrap-server localhost:9092 --list
-
-import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
-
-@Bean
-public ConsumerFactory<String, Object> consumerFactory() {
-    Map<String, Object> props = new HashMap<>();
-    props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-    props.put(ConsumerConfig.GROUP_ID_CONFIG, "ib-orchestrator-group");
-
-    // Envolver con ErrorHandlingDeserializer para que el DefaultErrorHandler
-    // de KafkaErrorHandlerConfig pueda manejar fallos de deserialización
-    props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-    props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
-    props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-
-    // kafkajs (Node) no envía headers __TypeId__ — usar el json.value.type del @KafkaListener
-    props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-    props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-
-    props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-    return new DefaultKafkaConsumerFactory<>(props);
-}
+  --group dev-ib-platform-start-ib-orchestrator-group ^
+  --describe
