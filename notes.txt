@@ -1,3 +1,6 @@
 .\bin\windows\kafka-consumer-groups.bat --bootstrap-server localhost:9092 ^
   --group dev-ib-platform-start-ib-orchestrator-group ^
   --describe
+
+
+kafka-consumer-groups.bat --bootstrap-server localhost:9092 --group dev-ib-platform-start-ib-orchestrator-group --describe
