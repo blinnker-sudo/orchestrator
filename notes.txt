@@ -1,3 +1,10 @@
+cd C:\kafka
+.\bin\windows\kafka-consumer-groups.bat --bootstrap-server localhost:9092 ^
+  --group ib-platform-ib-orchestrator-consumer ^
+  --topic dev-ib-platform-start-orchestrator-request-country ^
+  --reset-offsets --to-latest --execute
+
+
 .\bin\windows\kafka-consumer-groups.bat --bootstrap-server localhost:9092 --list
 
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
