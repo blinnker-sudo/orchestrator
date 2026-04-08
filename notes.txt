@@ -1,11 +1,5 @@
-https://archive.apache.org/dist/kafka/3.7.0/kafka_2.13-3.7.0.tgz
-
-# Generar UUID del cluster
-./bin/windows/kafka-storage.bat random-uuid
-
-
-# Formatear el storage con ese UUID
-./bin/windows/kafka-storage.bat format -t <UUID-AQUI> -c config/kraft/server.properties
-
-
-./bin/windows/kafka-server-start.bat config/kraft/server.properties
+listeners=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+advertised.listeners=PLAINTEXT://localhost:9092,EXTERNAL://localhost:29092
+listener.security.protocol.map=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+inter.broker.listener.name=PLAINTEXT
+controller.listener.names=CONTROLLER
