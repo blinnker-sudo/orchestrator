@@ -1,18 +1,24 @@
-spring:
-  kafka:
-    definitions:
-      consumer:
-        bootstrap-servers: localhost:9092
-        key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-        value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-        properties:
-          spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
-          spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-          spring.json.use.type.headers: false
-          spring.json.trusted.packages: "*"
-      producer:
-        bootstrap-servers: localhost:9092
-        key-serializer: org.apache.kafka.common.serialization.StringSerializer
-        value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-        properties:
-          spring.json.add.type.headers: false
+.\bin\windows\kafka-consumer-groups.bat --bootstrap-server localhost:9092 --list
+
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
+
+@Bean
+public ConsumerFactory<String, Object> consumerFactory() {
+    Map<String, Object> props = new HashMap<>();
+    props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    props.put(ConsumerConfig.GROUP_ID_CONFIG, "ib-orchestrator-group");
+
+    // Envolver con ErrorHandlingDeserializer para que el DefaultErrorHandler
+    // de KafkaErrorHandlerConfig pueda manejar fallos de deserialización
+    props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+    props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+    props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
+    props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
+
+    // kafkajs (Node) no envía headers __TypeId__ — usar el json.value.type del @KafkaListener
+    props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+    props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
+
+    props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    return new DefaultKafkaConsumerFactory<>(props);
+}
