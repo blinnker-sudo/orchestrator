@@ -1,24 +1,4 @@
-1. Crea los topics
-En la terminal 2 (la del broker déjala intacta), pega estos comandos uno por uno o todos juntos:
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-start-orchestrator-request-country --replication-factor 1 --partitions 4
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-resume-orchestrator-request-country --replication-factor 1 --partitions 4
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-delivery-orchestrator-request-country --replication-factor 1 --partitions 4
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-init-orchestrator-request-country --replication-factor 1 --partitions 4
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-start-orchestrator-response-country --replication-factor 1 --partitions 2
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-resume-orchestrator-response-country --replication-factor 1 --partitions 2
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-delivery-orchestrator-response-country --replication-factor 1 --partitions 3
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-init-orchestrator-response-country --replication-factor 1 --partitions 3
-
-bin\windows\kafka-topics.bat --create --if-not-exists --bootstrap-server localhost:9092 --topic dev-ib-platform-event-tracing-country --replication-factor 1 --partitions 5
-
-
-2. Verifica que se crearon todos
-bin\windows\kafka-topics.bat --list --bootstrap-server localhost:9092
+cd C:\software\journey\ib-mx-client-validation-lib
+ls libs/ib-mx-customer-validation-bcs-lib/src/journey/step-factory.ts
+npx tsc -p libs/ib-mx-customer-validation-bcs-lib/tsconfig.lib.json --listFiles 2>&1 | head -30
+npx tsc -p libs/ib-mx-customer-validation-bcs-lib/tsconfig.lib.json 2>&1 | head -20
