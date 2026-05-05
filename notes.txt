@@ -3,3 +3,4 @@ ls libs/ib-mx-customer-validation-bcs-lib/src/journey/step-factory.ts
 npx tsc -p libs/ib-mx-customer-validation-bcs-lib/tsconfig.lib.json --listFiles 2>&1 | head -30
 npx tsc -p libs/ib-mx-customer-validation-bcs-lib/tsconfig.lib.json 2>&1 | head -20
 npx tsc -p libs/ib-mx-customer-validation-bcs-lib/tsconfig.lib.json --listFiles 2>/dev/null | grep -i "step-factory"
+npx tsc -p libs/ib-mx-customer-validation-bcs-lib/tsconfig.lib.json --watch --watchFile priorityPollingInterval --watchDirectory dynamicPriorityPolling --extendedDiagnostics
