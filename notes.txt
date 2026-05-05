@@ -1,2 +1,1 @@
-cd C:\software\journey\ib-client-validation-journey
-npm install --no-save "bcs-library@file:../ib-mx-client-validation-lib/dist/libs/ib-mx-customer-validation-bcs-lib"
+cmd "//c" "mklink /J node_modules\\bcs-library ..\\..\\ib-mx-client-validation-lib\\dist\\libs\\ib-mx-customer-validation-bcs-lib"
