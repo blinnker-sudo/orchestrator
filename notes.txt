@@ -1,3 +1,3 @@
-cd C:\software\journey\ib-client-validation-journey
+cd /d C:\software\journey\ib-client-validation-journey
 rmdir /s /q node_modules\bcs-library
-mklink /J node_modules\bcs-library ..\..\ib-mx-client-validation-lib\dist\libs\ib-mx-customer-validation-bcs-lib
+mklink /J node_modules\bcs-library C:\software\journey\ib-mx-client-validation-lib\dist\libs\ib-mx-customer-validation-bcs-lib
