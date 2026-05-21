@@ -11,10 +11,15 @@ Está pensada para Windows + Git Bash + WebStorm. Una guía equivalente para Mac
 ## Requisitos previos
 
 - Ambos repos clonados como carpetas hermanas dentro de `C:\software\journey\`.
-- Node 18+ instalado.
+- **Node 22+** instalado (a partir de la migración a NestJS 11; antes era Node 18+).
 - Git Bash (incluido con Git for Windows).
 - Acceso a cmd.exe estándar (Win + R → `cmd`).
 - WebStorm (opcional, también funciona desde terminal).
+
+Verifica tu versión de Node:
+```bash
+node --version
+```
 
 ## Setup inicial (solo la primera vez, o cuando cambias de feature/branch)
 
@@ -29,6 +34,15 @@ npm install
 cd C:\software\journey\ib-client-validation-journey
 npm install
 ```
+
+> ⚠️ **Si el `npm install` del API falla con error de peer dependency** (típicamente `@nestjs/axios ^4.0.1` después de la migración a NestJS 11), usa:
+> ```bash
+> npm install --legacy-peer-deps
+> ```
+> Para no tener que escribirlo cada vez, agrega o crea un `.npmrc` en la raíz del API con:
+> ```
+> legacy-peer-deps=true
+> ```
 
 ### 2. Compila la lib una vez para generar `dist/`
 
@@ -46,6 +60,8 @@ C:\software\journey\ib-mx-client-validation-lib\dist\libs\ib-mx-customer-validat
 ├── journey/
 └── (otros)
 ```
+
+> ⚠️ **Verifica que `index.js` esté en la raíz del dist, NO bajo `src/`.** Si después de `build:lib` ves la estructura con `dist/libs/.../src/index.js` (todo bajo `src/`), es un bug conocido relacionado con la versión de TypeScript. Ve a la sección [Issues conocidos → Dist con estructura `src/`](#dist-con-estructura-src-extra-cannot-find-module-bcs-library) más abajo para el fix antes de continuar.
 
 ### 3. Instala la versión publicada en el API (para tener TODAS las deps transitivas)
 
@@ -83,6 +99,14 @@ Vínculo de unión creado para node_modules\bcs-library <<===>> C:\software\jour
 
 **Usa siempre ruta absoluta**. Las rutas relativas con `..\..\` se resuelven respecto al cwd actual (no respecto al folder donde queda el link), y eso confunde a Windows.
 
+> 💡 **Alternativa**: usa el script `link-lib-dev.cmd` (si lo tienes en el repo) que automatiza estos 3 pasos con validaciones:
+> ```cmd
+> link-lib-dev.cmd ^
+>   C:\software\journey\ib-client-validation-journey ^
+>   C:\software\journey\ib-mx-client-validation-lib\dist\libs\ib-mx-customer-validation-bcs-lib ^
+>   bcs-library
+> ```
+
 ### 5. Verifica que el junction funciona
 
 Desde Git Bash:
@@ -119,6 +143,8 @@ setx NODE_OPTIONS "--preserve-symlinks"
 ```
 
 Cierra y vuelve a abrir cmd / Git Bash / WebStorm para que tome efecto.
+
+> ⚠️ `setx` solo afecta procesos **nuevos**. Si WebStorm o alguna terminal quedó abierta antes del `setx`, esa instancia NO va a tener la variable. Hay que cerrar todo completo (revisar Task Manager si hace falta) y reabrir.
 
 Verifica:
 
@@ -165,6 +191,8 @@ Espera a que imprima:
 Found 0 errors. Watching for file changes.
 ```
 
+> 💡 El watch SOLO es necesario mientras desarrollas activamente la lib. El junction y el API funcionan sin el watch corriendo — el watch solo automatiza el "recompilar `dist/` cuando guardas un `.ts`".
+
 #### Terminal B — API (o WebStorm)
 
 Si arrancas desde Git Bash:
@@ -196,7 +224,64 @@ Si arrancas desde WebStorm: solo dale Run a tu config (que ya tiene `NODE_OPTION
 | Watch detecta pero archivo `.js` no se actualiza | Estás revisando el archivo equivocado | Si modificaste `src/journey/foo.ts`, mira `dist/.../journey/foo.js`, NO `index.js` |
 | Archivo se actualiza, API no toma el cambio | API no se reinició | Mata el proceso y vuelve a arrancarlo |
 | `Cannot find module 'X'` al arrancar | Falta `--preserve-symlinks` | `echo $NODE_OPTIONS` debe decir `--preserve-symlinks` |
-| `Cannot find module 'bcs-library'` al arrancar | Junction roto | `ls -la node_modules/bcs-library` debe mostrar la flecha al dist correcto |
+| `Cannot find module 'bcs-library'` al arrancar | Junction roto o `dist/` con estructura mala | `ls -la node_modules/bcs-library` debe mostrar la flecha al dist correcto Y `ls dist/libs/.../` debe tener `index.js` en la raíz |
+| `npm install` falla con peer deps | Migración NestJS 11 + axios 4 | Usa `--legacy-peer-deps` o agrega `.npmrc` |
+
+## Cómo limpiar y empezar de cero
+
+Si algo se rompe y prefieres empezar fresco, sigue este orden estricto desde **cmd.exe** (no necesitas permisos de administrador):
+
+### 1. Cierra TODO lo que use Node
+
+- WebStorm cerrado completo. Verifica desde Task Manager (Ctrl+Shift+Esc) que no quede `webstorm.exe`, `webstorm64.exe`, ni `java.exe` colgado del IDE. Si quedan, click derecho → "End task".
+- Mata cualquier `node` corriendo. Desde cmd:
+  ```cmd
+  taskkill /F /IM node.exe
+  ```
+  Si te dice "Acceso denegado", abre Task Manager y termina los procesos `node.exe` manualmente desde ahí (no requiere admin para matar procesos que iniciaste tú).
+- Cierra la terminal del `tsc --watch` de la lib.
+
+### 2. Borra el junction (no el dist real)
+
+Desde cmd, parado en la raíz del API:
+
+```cmd
+cd /d C:\software\journey\ib-client-validation-journey
+
+REM Verifica primero que sea junction (debe decir <JUNCTION>)
+dir node_modules | findstr bcs-library
+
+REM Bórralo
+rmdir /s /q node_modules\bcs-library
+```
+
+> ⚠️ Usa `rmdir`, **no** `del` ni borrar desde el Explorador de archivos. Esos a veces siguen el junction y te borran el `dist/` real de la lib.
+
+### 3. (Opcional) Limpia `node_modules` del API completo
+
+```cmd
+rmdir /s /q node_modules
+```
+
+> ⚠️ **NO borres `package-lock.json`.** Si lo borras, npm va a resolver el árbol de deps desde cero contra el registry y muy probablemente te tope con conflictos de peer deps (especialmente después de la migración a NestJS 11). Si por accidente lo borraste, recupéralo desde Git: `git checkout package-lock.json` y luego `npm ci`.
+
+### 4. Verifica que el `dist` de la lib siga intacto
+
+```cmd
+dir C:\software\journey\ib-mx-client-validation-lib\dist\libs\ib-mx-customer-validation-bcs-lib
+```
+
+Debe existir y tener archivos. Si por accidente se borró, recompila con `npm run build:lib`.
+
+### 5. Re-ejecuta los pasos 1-6 del Setup inicial
+
+En este orden estricto:
+1. `npm install` en la lib y en el API
+2. `npm run build:lib` en la lib (verifica estructura del dist)
+3. `sh install-country-library.sh` en el API
+4. `mklink` desde cmd
+5. Verifica junction
+6. `NODE_OPTIONS` (si no estaba seteado)
 
 ## Volver al modo prod
 
@@ -248,6 +333,61 @@ Solución: revisa la ruta destino del symlink con `ls -la`. Si apunta a un path 
 Síntoma: Node no encuentra dependencias transitivas que sí existen en `node_modules` del API.
 Solución: activa `NODE_OPTIONS=--preserve-symlinks`.
 
+### `npm install` del API falla con `unable to resolve dependency tree` / `peer @nestjs/axios@^4.0.1`
+Síntoma: después de la migración a NestJS 11 en la lib, el API (que sigue en NestJS 10) no puede resolver las peer deps.
+Solución temporal: `npm install --legacy-peer-deps`, o agregar `legacy-peer-deps=true` al `.npmrc` del API.
+Solución real: migrar el API también a NestJS 11.
+
+### Dist con estructura `src/` extra (`Cannot find module 'bcs-library'`)
+
+**Síntoma**: después de `build:lib`, el dist queda así:
+```
+dist/libs/ib-mx-customer-validation-bcs-lib/
+├── package.json   ← dice "main": "index.js"
+├── src/           ← pero el index.js real está acá adentro
+│   ├── index.js
+│   ├── journey/
+│   └── ...
+```
+
+Al levantar el API: `Cannot find module 'bcs-library'`, porque Node lee el `main: "index.js"` y busca en la raíz del dist, donde no está.
+
+**Causa raíz**: alguna versión nueva de TypeScript (dentro del rango `^5.1.3` que tiene la lib) infiere `rootDir` distinto cuando no está declarado explícitamente. Esto típicamente aparece después de un `npm install` que regenera el `package-lock.json` con una versión más nueva de TS.
+
+**Fix permanente**: editar `libs/ib-mx-customer-validation-bcs-lib/tsconfig.lib.json` y agregar `"rootDir": "./src"`:
+
+```json
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declarationMap": true,
+    "declaration": true,
+    "outDir": "../../dist/libs/ib-mx-customer-validation-bcs-lib",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+}
+```
+
+Luego:
+```bash
+cd C:\software\journey\ib-mx-client-validation-lib
+rm -rf dist
+npm run build:lib
+```
+
+Verifica que ahora `index.js` esté en la raíz del dist:
+```bash
+ls dist/libs/ib-mx-customer-validation-bcs-lib/
+```
+
+Debe mostrar `index.js`, `package.json`, `journey/`, etc. — sin subcarpeta `src/`.
+
+> 💡 Este fix idealmente debería ir en un PR a la lib (es una línea), porque le pasa a cualquiera que clone y compile después de la migración a NestJS 11.
+
+**Workaround alternativo** (si no puedes tocar el tsconfig): editar manualmente el `package.json` del dist y cambiar `"main": "index.js"` por `"main": "src/index.js"`. Pero ese cambio se sobrescribe en cada `build:lib`, así que es solución temporal.
+
 ## Resumen de comandos para tener a la mano
 
 **Setup completo (copia y pega):**
@@ -259,6 +399,8 @@ npm install && npm run build:lib
 
 cd C:\software\journey\ib-client-validation-journey
 npm install && sh install-country-library.sh
+# Si npm install falla por peer deps:
+#   npm install --legacy-peer-deps && sh install-country-library.sh
 ```
 
 cmd.exe:
@@ -286,3 +428,13 @@ npm run start
 ```
 
 Después: editas lib → ves "File change detected" → matas API con Ctrl+C → arrancas API otra vez → verificas el cambio.
+
+## Changelog de la guía
+
+- **Versión inicial**: setup con junction + `tsc --watch` + `NODE_OPTIONS=--preserve-symlinks`.
+- **Update post-migración NestJS 11 / Node 22**:
+   - Subido requisito a Node 22+.
+   - Documentado workaround `--legacy-peer-deps` para conflicto de `@nestjs/axios 4.0.1`.
+   - Documentado bug de estructura `dist/src/` por cambio implícito de versión de TypeScript, con fix vía `rootDir` explícito.
+   - Agregada sección de "Cómo limpiar y empezar de cero" con la advertencia de NO borrar `package-lock.json`.
+   - Aclaración de que `setx` solo afecta procesos nuevos.
