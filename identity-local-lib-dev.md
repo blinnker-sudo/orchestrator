@@ -153,6 +153,12 @@ npm run link:local-lib
 node -e "console.log(require('fs').lstatSync('node_modules/identity-verification-lib').isSymbolicLink() ? 'JUNCTION ✓' : 'carpeta real ✗')"
 ```
 
+Interpretación del paso 4:
+- **`JUNCTION ✓`** → apunta a tu lib local. Listo, sigue al workflow diario.
+- **`carpeta real ✗`** → es la copia publicada, no el junction (típicamente porque algo volvió a
+  correr `install-country-library.sh` después del link). **Solución:** vuelve a correr
+  `npm run link:local-lib` y verifica de nuevo.
+
 > El `npm run build` (vía `pre-build → install-country-dependency`) corre
 > `sh install-country-library.sh`, que **sobrescribe** el junction con la versión publicada. Por eso
 > `link:local-lib` **debe ir después**. Si vuelves a correr el build o el install-country, repite el
